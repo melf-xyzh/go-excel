@@ -23,3 +23,9 @@ type ExcelConfig struct {
 	f                *excelize.File           // Excel文件对象
 }
 
+type ExcelTag struct {
+	Column   string   // 列名
+	Select   []string // 枚举
+	Required bool     // 是否必填
+	Width    float64  // 列宽
+}

@@ -31,11 +31,35 @@ func NewExStyle(family string, size float64, horizontal, vertical string) (excel
 	return
 }
 
+// NewExStyleStr
+/**
+ *  @Description: 设置文件格式为纯文本
+ *  @return excelStyle
+ */
+func NewExStyleStr()  (excelStyle Style) {
+	excelStyle.NumFmt = 49
+	return
+}
+
+// GetStyle
+/**
+ *  @Description: 获取Style对象
+ *  @receiver s
+ *  @param f
+ *  @return style
+ *  @return err
+ */
 func (s *Style) GetStyle(f *excelize.File) (style int, err error) {
 	style, err = f.NewStyle(&s.Style)
 	return
 }
 
+// SetFamily
+/**
+ *  @Description: 设置字体
+ *  @receiver s
+ *  @param family
+ */
 func (s *Style) SetFamily(family string) {
 	s.Font.Family = family
 }

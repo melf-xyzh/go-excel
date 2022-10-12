@@ -8,8 +8,8 @@ package extemplate
 import (
 	"errors"
 	"fmt"
-	 "github.com/melf-xyzh/go-excel/constant"
-	 "github.com/melf-xyzh/go-excel/style"
+	"github.com/melf-xyzh/go-excel/constant"
+	"github.com/melf-xyzh/go-excel/style"
 	"github.com/xuri/excelize/v2"
 	"os"
 	"path"
@@ -41,6 +41,33 @@ func (e *ExcelConfig) GetTemplate(tableName string, tableHead []string) (f *exce
 	// 设置默认行高
 	if e.DefaultRowHeight == 0 {
 		e.DefaultRowHeight = exconst.DefaultRowHeight
+	}
+	// 获取有效的最后一列的列名
+	// 获取列对应的列名
+	name, errName := excelize.ColumnNumberToName(len(tableHead))
+	if errName != nil {
+		err = errors.New(fmt.Sprintf("获取第%d列对应的列名失败：%s", len(tableHead), errName.Error()))
+		return
+	}
+	// 设置格式
+	styleStr := exstyle.NewExStyleStr()
+	// 获取对应的StyleId
+	styleStrId, errStyle := styleStr.GetStyle(f)
+	if errStyle != nil {
+		err = errors.New("获取StyleId失败：" + errStyle.Error())
+		return
+	}
+	// 设置格式
+	err = f.SetColStyle(e.SheetName, "A:"+name, styleStrId)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("设置单元格格式 %s:%s 失败：%s", "A", name, err.Error()))
+		return
+	}
+	// 为列设置格式
+	err = f.SetColWidth(e.SheetName, "A", name, e.DefaultColWidth)
+	if err != nil {
+		err = errors.New(fmt.Sprintf("设置 %s:%s 列宽度失败：%s", "A", name, err.Error()))
+		return
 	}
 	// 设置工作表默认格式
 	err = f.SetSheetFormatPr(
@@ -84,13 +111,7 @@ func (e *ExcelConfig) GetTemplate(tableName string, tableHead []string) (f *exce
 		err = errors.New(fmt.Sprintf("设置表头失败：%s", err.Error()))
 		return
 	}
-	// 获取有效的最后一列的列名
-	// 获取列对应的列名
-	name, errName := excelize.ColumnNumberToName(len(tableHead))
-	if errName != nil {
-		err = errors.New(fmt.Sprintf("获取第%d列对应的列名失败：%s", len(tableHead), errName.Error()))
-		return
-	}
+
 	// 设置格式
 	if len(e.Style) > 0 {
 		for cellStr, style := range e.Style {
@@ -123,7 +144,7 @@ func (e *ExcelConfig) GetTemplate(tableName string, tableHead []string) (f *exce
 			err = errors.New("获取StyleId失败：" + errStyle.Error())
 			return
 		}
-		hCell, vCell := "A1", name+"2"
+		hCell, vCell := "A1", name+"4"
 		// 设置格式
 		err = f.SetCellStyle(e.SheetName, hCell, vCell, styleId)
 		if err != nil {
@@ -151,6 +172,43 @@ func (e *ExcelConfig) GetTemplate(tableName string, tableHead []string) (f *exce
 		}
 	}
 	e.f = f
+	return
+}
+
+
+// GetTemplateByStruct
+/**
+ *  @Description:
+ *  @receiver e
+ *  @param tableName
+ *  @param data
+ *  @return f
+ *  @return err
+ */
+func (e *ExcelConfig) GetTemplateByStruct(tableName string, data interface{}) (f *excelize.File, err error) {
+	// 解析结构体
+	tableHead := make([]string, 0)
+	m := make(map[int]ExcelTag)
+	tableHead, m, err = parse(data, 1)
+	if err != nil {
+		return
+	}
+	if len(m) > 0 {
+		for k, v := range m {
+			// 获取列对应的列名
+			name, errName := excelize.ColumnNumberToName(k)
+			if errName != nil {
+				err = errors.New(fmt.Sprintf("获取第%d列对应的列名失败：%s", len(tableHead), errName.Error()))
+				return
+			}
+			if e.SpecialColWidth == nil {
+				e.SpecialColWidth = map[string]float64{}
+			}
+			e.SpecialColWidth[name] = v.Width
+		}
+	}
+	// 创建模板
+	f, err = e.GetTemplate(tableName, tableHead)
 	return
 }
 

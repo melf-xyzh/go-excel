@@ -50,6 +50,47 @@ if err != nil {
 }
 ```
 
+通过结构体生成导入模板
+
+```go
+// 定义结构体
+type User struct {
+	Id       string `json:"id"         ex:"column:ID;width:10;required;"`
+	Name     string `json:"name"       ex:"column:姓名;width:30;required;"`
+	NickName string `json:"nickName"   ex:"column:昵称;width:20;required;"`
+	Phone    string `json:"phone"      ex:"column:手机号;width:15;required;"`
+	Age      int    `json:"age"        ex:"column:年龄;width:10;required;"`
+	Sex      string `json:"sex"        ex:"column:性别;width:10;required;select:男、女"`
+	School // 允许存在匿名字段
+}
+
+type School struct {
+	SchoolName    string `ex:"column:学校;width:30;required;"`
+	SchoolAddress string `ex:"column:学校地址;width:50;required;"`
+}
+
+// 创建一个excelConfig（每个Excel文件需要一个）
+exTemp3 := extemplate.ExcelConfig{
+	SheetName:        "车辆导入模板",                                          // 工作表名称
+	FileName:         "车辆导入模板" + exconst.DefaultExcelFileName + ".xlsx", // 导出后的文件名
+}
+
+user := User{
+    Id:       "001",
+    Name:     "张三",
+    NickName: "别人家的孩子",
+    Phone:    "123456789",
+    Age:      30,
+    Sex:      "男",
+}
+
+// 获取Excel导入模板
+file, err := exTemp3.GetTemplateByStruct("信息导入模板", user)
+if err != nil {
+    panic(err)
+}
+```
+
 保存Excel文件
 
 ```go
@@ -60,3 +101,10 @@ if err != nil {
 }
 ```
 
+## 读取导入数据
+
+待开发
+
+## 导出数据
+
+待开发
