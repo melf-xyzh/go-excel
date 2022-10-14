@@ -32,5 +32,20 @@ const (
 )
 
 var(
+	// DefaultExcelFileName 导出的默认的Excel文件名
 	DefaultExcelFileName = time.Now().Format("20060102150405.xlsx")
+)
+
+// Operation 操作标识
+const (
+	// IMPORT 导入
+	IMPORT = "import"
+	// EXPORT 导出
+	EXPORT = "export"
+)
+
+// FileFormat 文件格式
+const (
+	// EXCEL excel表格
+	EXCEL = "Excel"
 )

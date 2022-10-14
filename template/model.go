@@ -8,6 +8,7 @@ package extemplate
 import (
 	"github.com/melf-xyzh/go-excel/style"
 	"github.com/xuri/excelize/v2"
+	"gorm.io/gorm"
 )
 
 // ExcelConfig 表格参数
@@ -21,11 +22,13 @@ type ExcelConfig struct {
 	Style            map[string]exstyle.Style // 格式（map[左上,右下]exstyle.Style）
 	MergeCell        map[string]string        // 需要合并单元格（map[左上]右下）
 	f                *excelize.File           // Excel文件对象
+	DB               *gorm.DB                 // 数据库对象
 }
 
 type ExcelTag struct {
-	Column   string   // 列名
-	Select   []string // 枚举
-	Required bool     // 是否必填
-	Width    float64  // 列宽
+	Column   string              // 列名
+	Select   map[string]struct{} // 枚举
+	Required bool                // 是否必填
+	Width    float64             // 列宽
+	//Select   []string // 枚举
 }

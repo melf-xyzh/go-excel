@@ -103,7 +103,30 @@ if err != nil {
 
 ## 读取导入数据
 
-待开发
+通过结构体读入数据
+
+```go
+user := User{}
+// 通过结构体读取数据，并进行校验
+// rows, err := extemplate.LoadExcelByStruct("./", "book1.xlsx", user, 2)
+rows, err := extemplate.LoadExcelByStruct("./", "book1.xls", user, 2)
+if err != nil {
+	panic(err)
+}
+for _, row := range rows {
+	fmt.Println(row)
+}
+```
+
+常规方式读取数据
+
+```go
+// rows, err = extemplate.LoadExcel("./", "book1.xls", 8)
+rows, err = extemplate.LoadExcel("./", "book1.xlsx", 8)
+if err != nil {
+	panic(err)
+}
+```
 
 ## 导出数据
 

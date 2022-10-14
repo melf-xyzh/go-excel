@@ -65,8 +65,14 @@ func parse(data interface{}, index int) (tableHead []string, exTagMap map[int]Ex
 						case "width":
 							excelTag.Width, _ = strconv.ParseFloat(v, 64)
 						case "select":
-							sel := strings.Split(v, "、")
-							excelTag.Select = sel
+							selects := strings.Split(v, "、")
+							if len(selects)>0 {
+								selectMap := make(map[string]struct{})
+								for _, sel := range selects {
+									selectMap[sel] = struct{}{}
+								}
+								excelTag.Select = selectMap
+							}
 						}
 					}
 				}
