@@ -28,6 +28,8 @@ func NewExStyle(family string, size float64, horizontal, vertical string) (excel
 		Horizontal: horizontal,
 		Vertical:   vertical,
 	}
+	// 设置文件格式为纯文本
+	excelStyle.NumFmt = 49
 	return
 }
 

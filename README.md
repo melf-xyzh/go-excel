@@ -4,7 +4,7 @@ Excel数据读写的简易封装
 ## 安装
 
 ```go
-go get github.com/melf-xyzh/go-excel
+go get -u github.com/melf-xyzh/go-excel
 ```
 
 ## 生成导入模板
