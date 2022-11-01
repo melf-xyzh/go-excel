@@ -8,6 +8,7 @@ package extemplate
 import (
 	"errors"
 	"fmt"
+	"github.com/dlclark/regexp2"
 	"github.com/extrame/xls"
 	"github.com/melf-xyzh/go-excel/commons"
 	"github.com/melf-xyzh/go-excel/constant"
@@ -19,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 var once excommons.ErrOnce
@@ -119,17 +121,95 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 			if !ok {
 				continue
 			}
+			// 必填校验
 			if tag.Required {
 				if rowI == "" {
 					err = errors.New(fmt.Sprintf("第 %d 行,%s 必填", i, tag.Column))
 					return
 				}
 			}
-			if tag.Select != nil {
-				_, okSelect := tag.Select[rowI]
-				if !okSelect && rowI != "" {
-					err = errors.New(fmt.Sprintf("第 %d 行,%s 内容不合法", i, tag.Column))
-					return
+			// 非空则进行其他校验
+			if rowI != "" {
+				// 枚举校验
+				if tag.Select != nil {
+					_, okSelect := tag.Select[rowI]
+					if !okSelect && rowI != "" {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容不合法", i, tag.Column))
+						return
+					}
+				}
+				// 长度校验
+				if tag.lens != nil {
+					if tag.lens[0] == tag.lens[1] {
+						if utf8.RuneCountInString(rowI) != tag.lens[0] {
+							err = errors.New(fmt.Sprintf("第 %d 行,%s 内容长度应为 %d 位", i, tag.Column, tag.lens[0]))
+							return
+						}
+					} else if utf8.RuneCountInString(rowI) < tag.lens[0] {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容长度应大于 %d 位", i, tag.Column, tag.lens[0]))
+						return
+					} else if utf8.RuneCountInString(rowI) > tag.lens[1] {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容长度应小于 %d 位", i, tag.Column, tag.lens[1]))
+						return
+					}
+				}
+				// 数值校验（上限）
+				if tag.lt != nil {
+					v, errNum := strconv.Atoi(rowI)
+					if errNum != nil {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容转换为数字失败:%s", i, tag.Column, errNum.Error()))
+						return
+					}
+					if v >= *tag.lt {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 应小于 %d", i, tag.Column, *tag.lt))
+						return
+					}
+				} else if tag.lte != nil {
+					v, errNum := strconv.Atoi(rowI)
+					if errNum != nil {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容转换为数字失败:%s", i, tag.Column, errNum.Error()))
+						return
+					}
+					if v > *tag.lte {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 应小于等于 %d", i, tag.Column, *tag.lte))
+						return
+					}
+				}
+				// 数值校验（下限）
+				if tag.gt != nil {
+					v, errNum := strconv.Atoi(rowI)
+					if errNum != nil {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容转换为数字失败:%s", i, tag.Column, errNum.Error()))
+						return
+					}
+					if v <= *tag.gt {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 应大于 %d", i, tag.Column, *tag.gt))
+						return
+					}
+				} else if tag.gte != nil {
+					v, errNum := strconv.Atoi(rowI)
+					if errNum != nil {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容转换为数字失败:%s", i, tag.Column, errNum.Error()))
+						return
+					}
+					if v < *tag.gte {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 应大于等于 %d", i, tag.Column, *tag.gte))
+						return
+					}
+				}
+				// 正则校验
+				if tag.Re != "" {
+					r := regexp2.MustCompile(tag.Re, 0)
+					okRe, _ := r.MatchString(rowI)
+					//if errRe != nil {
+					//	err = errors.New(fmt.Sprintf("第 %d 行,%s 正则校验失败", i, tag.Column))
+					//	return
+					//}
+					// 正则校验
+					if !okRe {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s 正则校验失败", i, tag.Column))
+						return
+					}
 				}
 			}
 		}

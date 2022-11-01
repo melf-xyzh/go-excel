@@ -66,13 +66,41 @@ func parse(data interface{}, index int) (tableHead []string, exTagMap map[int]Ex
 							excelTag.Width, _ = strconv.ParseFloat(v, 64)
 						case "select":
 							selects := strings.Split(v, "、")
-							if len(selects)>0 {
+							if len(selects) > 0 {
 								selectMap := make(map[string]struct{})
 								for _, sel := range selects {
 									selectMap[sel] = struct{}{}
 								}
 								excelTag.Select = selectMap
 							}
+						case "len":
+							var lens [2]int
+							if strings.Contains(v, "-") {
+								ls := strings.Split(v, "-")
+								l0, _ := strconv.Atoi(ls[0])
+								lens[0] = l0
+								l1, _ := strconv.Atoi(ls[1])
+								lens[1] = l1
+							} else {
+								l0, _ := strconv.Atoi(v)
+								lens[0] = l0
+								lens[1] = l0
+							}
+							excelTag.lens = &lens
+						case "<":
+							m, _ := strconv.Atoi(v)
+							excelTag.lt = &m
+						case "<=":
+							m, _ := strconv.Atoi(v)
+							excelTag.lt = &m
+						case ">":
+							m, _ := strconv.Atoi(v)
+							excelTag.gt = &m
+						case ">=":
+							m, _ := strconv.Atoi(v)
+							excelTag.gte = &m
+						case "re":
+							excelTag.Re = v
 						}
 					}
 				}
