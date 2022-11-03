@@ -73,6 +73,15 @@ func parse(data interface{}, index int) (tableHead []string, exTagMap map[int]Ex
 								}
 								excelTag.Select = selectMap
 							}
+						case "multiSelect":
+							selects := strings.Split(v, "、")
+							if len(selects) > 0 {
+								selectMap := make(map[string]struct{})
+								for _, sel := range selects {
+									selectMap[sel] = struct{}{}
+								}
+								excelTag.MultiSelect = selectMap
+							}
 						case "len":
 							var lens [2]int
 							if strings.Contains(v, "-") {

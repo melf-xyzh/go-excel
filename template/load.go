@@ -15,6 +15,7 @@ import (
 	"github.com/melf-xyzh/go-excel/model"
 	"github.com/xuri/excelize/v2"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"path"
 	"strconv"
@@ -30,7 +31,8 @@ var once excommons.ErrOnce
  *  @Description:
  *  @receiver e
  *  @param mf http文件对象
- *  @param colCount 需要读取的列数
+ *  @param data
+ *  @param ignoreRows
  *  @param filePath 文件保存路径（不包含文件名）
  *  @param fileName 文件名（需要保持的文件名）
  *  @param funModule 所属功能模块名
@@ -94,7 +96,7 @@ func (e *ExcelConfig) LoadHttpExcel(mf multipart.File, data interface{}, ignoreR
 /**
  *  @Description: 导入Excel数据，通过结构体
  *  @param filePath 文件保存路径（不包含文件名）
- *  @param fileName 文件名（需要保持的文件名）
+ *  @param filename
  *  @param data 结构体
  *  @param ignoreRows 忽略行数（对前n行不进行校验）
  *  @return rows 读取出的数据
@@ -137,7 +139,19 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 						err = errors.New(fmt.Sprintf("第 %d 行,%s 内容不合法", i, tag.Column))
 						return
 					}
+				} else if tag.MultiSelect != nil {
+					vs := strings.Split(rowI, ",")
+					if len(vs) > 0 {
+						for _, v := range vs {
+							_, okSelect := tag.Select[v]
+							if !okSelect {
+								err = errors.New(fmt.Sprintf("第 %d 行,%s 内容不合法", i, tag.Column))
+								return
+							}
+						}
+					}
 				}
+
 				// 长度校验
 				if tag.lens != nil {
 					if tag.lens[0] == tag.lens[1] {
@@ -282,5 +296,33 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 		err = errors.New("暂不支持的文件格式")
 		return
 	}
+	return
+}
+
+// LoadLadderExcel
+/**
+ *  @Description:
+ *  @param filePath 文件路径
+ *  @param filename 文件名
+ *  @param colCount 总列数
+ *  @param ignoreRows 忽略行数
+ *  @param ignoreCols 忽略列数
+ *  @return rows 数据
+ *  @return err 错误
+ */
+func LoadLadderExcel(filePath, filename string, colCount, ignoreRows, ignoreCols int) (rows [][]string, err error) {
+	rows, err = LoadExcel(filePath, filename, colCount)
+	if err != nil {
+		return nil, err
+	}
+	newRows := make([][]string, colCount-ignoreRows, colCount-ignoreRows)
+	for i, row := range rows {
+		log.Println(fmt.Sprintf("第 %d 行,值：%s", i, row))
+		if i < ignoreRows {
+			continue
+		}
+		newRows[i-ignoreRows] = row[ignoreCols:]
+	}
+	rows = newRows
 	return
 }

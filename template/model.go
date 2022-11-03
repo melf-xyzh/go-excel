@@ -26,15 +26,16 @@ type ExcelConfig struct {
 }
 
 type ExcelTag struct {
-	Column   string              // 列名
-	Select   map[string]struct{} // 枚举
-	Required bool                // 是否必填
-	Width    float64             // 列宽
-	lens     *[2]int             // 长度
-	lt       *int                // 小于
-	lte      *int                // 小于等于
-	gt       *int                // 大于
-	gte      *int                // 大于等于
-	Re       string              // 正则
+	Column      string              // 列名
+	Select      map[string]struct{} // 枚举(选择其中一个)
+	MultiSelect map[string]struct{} // 枚举(选择其中多个)
+	Required    bool                // 是否必填
+	Width       float64             // 列宽
+	lens        *[2]int             // 长度
+	lt          *int                // 小于
+	lte         *int                // 小于等于
+	gt          *int                // 大于
+	gte         *int                // 大于等于
+	Re          string              // 正则
 	//Select   []string // 枚举
 }

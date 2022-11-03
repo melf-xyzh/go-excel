@@ -91,6 +91,16 @@ if err != nil {
 }
 ```
 
+生成阶梯模板
+
+```go
+// 获取Excel导入模板
+_, err := exTemp.GetLadderTemplate("乘法表", []string{"1", "2", "3", "4", "5","6", "7", "8", "9"})
+if err != nil {
+    panic(err)
+}
+```
+
 保存Excel文件
 
 ```go
@@ -125,6 +135,18 @@ for _, row := range rows {
 rows, err = extemplate.LoadExcel("./", "book1.xlsx", 8)
 if err != nil {
 	panic(err)
+}
+```
+
+读取阶梯模板
+
+```go
+rows, err := extemplate.LoadLadderExcel("./","乘法表.xlsx",10,1,1)
+if err != nil {
+	panic(err)
+}
+for _, row := range rows {
+	fmt.Println(row)
 }
 ```
 
