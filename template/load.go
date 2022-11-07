@@ -128,7 +128,7 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 		otherFunc()
 	}
 	// 从Excel文件中读取数据
-	rows, err = LoadLadderExcel(filePath, fileName, len(tableHead), ignoreRows, ignoreCols)
+	rows, err = LoadLadderExcel(filePath, fileName, len(tableHead)+1, ignoreRows, ignoreCols)
 	if err != nil {
 		return
 	}
@@ -180,6 +180,7 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 	if err != nil {
 		return nil, err
 	}
+	uniqueMap := make(map[string]map[string]struct{}, 0)
 	for i, row := range rows {
 		fmt.Println(fmt.Sprintf("第 %d 行,值：%s", i, row))
 		if i < ignoreRows {
@@ -197,8 +198,26 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 					return
 				}
 			}
+
 			// 非空则进行其他校验
 			if rowI != "" {
+				// 唯一校验
+				if tag.unique {
+					_, exists := uniqueMap[tag.Column][rowI]
+					if exists {
+						err = errors.New(fmt.Sprintf("第 %d 行,%s(%s) 重复", i, tag.Column, rowI))
+						return
+					} else {
+						_, existsI := uniqueMap[tag.Column]
+						if !existsI {
+							uniqueMap[tag.Column] = map[string]struct{}{}
+						}
+						_, existsI = uniqueMap[tag.Column][rowI]
+						if !existsI {
+							uniqueMap[tag.Column][rowI] = struct{}{}
+						}
+					}
+				}
 				// 枚举校验
 				if tag.Select != nil {
 					_, okSelect := tag.Select[rowI]
@@ -210,9 +229,9 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 					vs := strings.Split(rowI, ",")
 					if len(vs) > 0 {
 						for _, v := range vs {
-							_, okSelect := tag.Select[v]
+							_, okSelect := tag.MultiSelect[v]
 							if !okSelect {
-								err = errors.New(fmt.Sprintf("第 %d 行,%s 内容不合法", i, tag.Column))
+								err = errors.New(fmt.Sprintf("第 %d 行,%s（%s） 内容不合法", i, tag.Column, v))
 								return
 							}
 						}

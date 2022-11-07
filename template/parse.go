@@ -55,6 +55,8 @@ func parse(data interface{}, index int) (tableHead []string, exTagMap map[int]Ex
 			for _, ex := range exs {
 				if strings.Contains(ex, "required") {
 					excelTag.Required = true
+				}else if strings.Contains(ex, "unique") {
+					excelTag.unique = true
 				} else if strings.Contains(ex, ":") {
 					kv := strings.Split(ex, ":")
 					if len(kv) >= 2 {

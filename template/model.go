@@ -37,5 +37,6 @@ type ExcelTag struct {
 	gt          *int                // 大于
 	gte         *int                // 大于等于
 	Re          string              // 正则
+	unique      bool                // 唯一
 	//Select   []string // 枚举
 }
