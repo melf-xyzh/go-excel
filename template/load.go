@@ -13,6 +13,7 @@ import (
 	"github.com/melf-xyzh/go-excel/commons"
 	"github.com/melf-xyzh/go-excel/constant"
 	"github.com/melf-xyzh/go-excel/model"
+	"github.com/storyicon/goetag"
 	"github.com/xuri/excelize/v2"
 	"io/ioutil"
 	"log"
@@ -51,8 +52,10 @@ func (e *ExcelConfig) LoadHttpExcel(mf multipart.File, data interface{}, ignoreR
 	}
 	// 关闭数据流
 	defer mf.Close()
+	// 获取ETag
+	etag, _ := nameToEtag(fileName)
 	// 创建并保存文件
-	err = excommons.CreateFile(filePath, fileName, bs)
+	err = excommons.CreateFile(filePath, etag, bs)
 	if err != nil {
 		return
 	}
@@ -61,7 +64,7 @@ func (e *ExcelConfig) LoadHttpExcel(mf multipart.File, data interface{}, ignoreR
 		otherFunc()
 	}
 	// 从Excel文件中读取数据
-	rows, err = LoadExcelByStruct(filePath, fileName, data, ignoreRows)
+	rows, err = LoadExcelByStruct(filePath, etag, data, ignoreRows)
 	if err != nil {
 		return
 	}
@@ -69,7 +72,7 @@ func (e *ExcelConfig) LoadHttpExcel(mf multipart.File, data interface{}, ignoreR
 	fileRcd.ID = excommons.UUID()
 	fileRcd.CreateTime = time.Now().Format("2006-01-02 15:04:05")
 	fileRcd.FileName = fileName
-	fileRcd.FilePath = filePath
+	fileRcd.FilePath = path.Join(filePath, etag)
 	fileRcd.Operation = exconst.IMPORT
 	fileRcd.FileFormat = exconst.EXCEL
 	fileRcd.FunModule = funModule
@@ -88,6 +91,23 @@ func (e *ExcelConfig) LoadHttpExcel(mf multipart.File, data interface{}, ignoreR
 			err = errors.New("数据库异常：" + err.Error())
 			return
 		}
+	}
+	return
+}
+
+// nameToEtag
+/**
+ *  @Description: 将名称转换为eTag
+ *  @receiver f
+ *  @param vf
+ */
+func nameToEtag(fileName string) (newFileName string, err error) {
+	// ETag
+	newFileName, err = goetag.GetEtagByString(fileName)
+	if err == nil {
+		// 扩展名
+		ext := path.Ext(fileName)
+		newFileName = newFileName + ext
 	}
 	return
 }
@@ -118,8 +138,10 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 	}
 	// 关闭数据流
 	defer mf.Close()
+	// 获取ETag
+	etag, _ := nameToEtag(fileName)
 	// 创建并保存文件
-	err = excommons.CreateFile(filePath, fileName, bs)
+	err = excommons.CreateFile(filePath, etag, bs)
 	if err != nil {
 		return
 	}
@@ -128,7 +150,7 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 		otherFunc()
 	}
 	// 从Excel文件中读取数据
-	rows, err = LoadLadderExcel(filePath, fileName, len(tableHead)+1, ignoreRows, ignoreCols)
+	rows, err = LoadLadderExcel(filePath, etag, len(tableHead)+1, ignoreRows, ignoreCols)
 	if err != nil {
 		return
 	}
@@ -136,7 +158,7 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 	fileRcd.ID = excommons.UUID()
 	fileRcd.CreateTime = time.Now().Format("2006-01-02 15:04:05")
 	fileRcd.FileName = fileName
-	fileRcd.FilePath = filePath
+	fileRcd.FilePath = path.Join(filePath, etag)
 	fileRcd.Operation = exconst.IMPORT
 	fileRcd.FileFormat = exconst.EXCEL
 	fileRcd.FunModule = funModule
@@ -228,7 +250,16 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 				} else if tag.MultiSelect != nil {
 					vs := strings.Split(rowI, ",")
 					if len(vs) > 0 {
+						unique := make(map[string]struct{})
 						for _, v := range vs {
+							// 多选判重
+							_, okUnique := unique[v]
+							if !okUnique {
+								err = errors.New(fmt.Sprintf("第 %d 行,%s（%s） 包含重复值", i, tag.Column, v))
+								return
+							}
+							unique[v] = struct{}{}
+
 							_, okSelect := tag.MultiSelect[v]
 							if !okSelect {
 								err = errors.New(fmt.Sprintf("第 %d 行,%s（%s） 内容不合法", i, tag.Column, v))

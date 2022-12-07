@@ -6,6 +6,7 @@ require (
 	github.com/dlclark/regexp2 v1.7.0
 	github.com/extrame/xls v0.0.1
 	github.com/google/uuid v1.3.0
+	github.com/storyicon/goetag v1.0.0
 	github.com/xuri/excelize/v2 v2.6.1
 	gorm.io/gorm v1.24.0
 )
