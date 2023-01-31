@@ -254,7 +254,7 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 						for _, v := range vs {
 							// 多选判重
 							_, okUnique := unique[v]
-							if !okUnique {
+							if okUnique {
 								err = errors.New(fmt.Sprintf("第 %d 行,%s（%s） 包含重复值", i, tag.Column, v))
 								return
 							}
@@ -379,6 +379,7 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 				v := xlsRow.Col(j)
 				v = strings.ReplaceAll(v, "\r\n", "")
 				v = strings.ReplaceAll(v, "\n", "")
+				v = strings.TrimSpace(v)
 				rowData[j] = v
 			}
 			rows = append(rows, rowData)
@@ -405,6 +406,7 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 				v, _ := f.GetCellValue(sheet, colName+strconv.Itoa(i))
 				v = strings.ReplaceAll(v, "\r\n", "")
 				v = strings.ReplaceAll(v, "\n", "")
+				v = strings.TrimSpace(v)
 				rowData[j-1] = v
 			}
 			rows = append(rows, rowData)
@@ -431,6 +433,14 @@ func LoadLadderExcel(filePath, filename string, colCount, ignoreRows, ignoreCols
 	rows, err = LoadExcel(filePath, filename, colCount)
 	if err != nil {
 		return nil, err
+	}
+	if len(rows) == 0 {
+		err = errors.New("未读取到数据")
+		return
+	}
+	if len(rows[0])-ignoreCols != colCount-1 {
+		err = errors.New("数据列数与期望值不符！")
+		return
 	}
 	newRows := make([][]string, colCount-ignoreRows, colCount-ignoreRows)
 	for i, row := range rows {
