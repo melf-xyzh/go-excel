@@ -12,6 +12,8 @@ const (
 	ExcelExt = ".xlsx"
 	// ExcelExt2003 文件扩展名(2007之前版本)
 	ExcelExt2003 = ".xls"
+	// ExcelExtCSV csv文件扩展名
+	ExcelExtCSV = ".csv"
 )
 
 const (

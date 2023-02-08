@@ -123,6 +123,7 @@ if err != nil {
 user := User{}
 // 通过结构体读取数据，并进行校验
 // rows, err := extemplate.LoadExcelByStruct("./", "book1.xlsx", user, 2)
+// rows, err := extemplate.LoadExcelByStruct("./", "book1.csv", user, 2)
 rows, err := extemplate.LoadExcelByStruct("./", "book1.xls", user, 2)
 if err != nil {
 	panic(err)
@@ -135,6 +136,7 @@ for _, row := range rows {
 常规方式读取数据
 
 ```go
+// rows, err = extemplate.LoadExcel("./", "book1.xls", 8)
 // rows, err = extemplate.LoadExcel("./", "book1.xls", 8)
 rows, err = extemplate.LoadExcel("./", "book1.xlsx", 8)
 if err != nil {

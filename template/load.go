@@ -12,6 +12,7 @@ import (
 	"github.com/extrame/xls"
 	"github.com/melf-xyzh/go-excel/commons"
 	"github.com/melf-xyzh/go-excel/constant"
+	"github.com/melf-xyzh/go-excel/csv"
 	"github.com/melf-xyzh/go-excel/model"
 	"github.com/storyicon/goetag"
 	"github.com/xuri/excelize/v2"
@@ -130,6 +131,14 @@ func nameToEtag(fileName string) (newFileName string, err error) {
  *  @return err 错误
  */
 func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string, ignoreRows, ignoreCols int, filePath, fileName, funModule, userId string, otherFunc func()) (fileRcd exmodel.FileRecord, rows [][]string, err error) {
+	// 记录操作相关信息
+	fileRcd.ID = excommons.UUID()
+	fileRcd.CreateTime = time.Now().Format("2006-01-02 15:04:05")
+	fileRcd.FileName = fileName
+	fileRcd.Operation = exconst.IMPORT
+	fileRcd.FileFormat = exconst.EXCEL
+	fileRcd.FunModule = funModule
+	fileRcd.CreateUserId = userId
 	// 读取文件内容
 	bs, err := ioutil.ReadAll(mf)
 	if err != nil {
@@ -140,6 +149,7 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 	defer mf.Close()
 	// 获取ETag
 	etag, _ := nameToEtag(fileName)
+	fileRcd.FilePath = path.Join(filePath, etag)
 	// 创建并保存文件
 	err = excommons.CreateFile(filePath, etag, bs)
 	if err != nil {
@@ -154,15 +164,7 @@ func (e *ExcelConfig) LoadHttpLadderExcel(mf multipart.File, tableHead []string,
 	if err != nil {
 		return
 	}
-	// 记录操作相关信息
-	fileRcd.ID = excommons.UUID()
-	fileRcd.CreateTime = time.Now().Format("2006-01-02 15:04:05")
-	fileRcd.FileName = fileName
-	fileRcd.FilePath = path.Join(filePath, etag)
-	fileRcd.Operation = exconst.IMPORT
-	fileRcd.FileFormat = exconst.EXCEL
-	fileRcd.FunModule = funModule
-	fileRcd.CreateUserId = userId
+
 	if e.DB != nil {
 		// 单例初始化数据表
 		err = once.Do(func() error {
@@ -204,10 +206,12 @@ func LoadExcelByStruct(filePath, filename string, data interface{}, ignoreRows i
 	}
 	uniqueMap := make(map[string]map[string]struct{}, 0)
 	for i, row := range rows {
-		fmt.Println(fmt.Sprintf("第 %d 行,值：%s", i, row))
 		if i < ignoreRows {
+			fmt.Println(fmt.Sprintf("【忽略】第 %d 行,值：%s", i, row))
 			continue
+
 		}
+		fmt.Println(fmt.Sprintf("第 %d 行,值：%s", i, row))
 		for j, rowI := range row {
 			tag, ok := exTagMap[j+1]
 			if !ok {
@@ -361,7 +365,8 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 	filePath = path.Join(filePath, filename)
 	// 获取文件扩展名
 	ext := excommons.GetFileExt(filename)
-	if ext == exconst.ExcelExt2003 {
+	switch ext{
+	case exconst.ExcelExt2003:
 		var open *xls.WorkBook
 		open, err = xls.Open(filePath, "utf-8")
 		if err != nil {
@@ -384,7 +389,7 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 			}
 			rows = append(rows, rowData)
 		}
-	} else if ext == exconst.ExcelExt {
+	case exconst.ExcelExt :
 		var f *excelize.File
 		// 读取excel文件
 		f, err = excelize.OpenFile(filePath)
@@ -411,7 +416,27 @@ func LoadExcel(filePath, filename string, colCount int) (rows [][]string, err er
 			}
 			rows = append(rows, rowData)
 		}
-	} else {
+	case exconst.ExcelExtCSV:
+		// 读取CSV文件
+		var rowsGet [][]string
+		rowsGet,err  = csv.ReadCSV(filePath)
+		if err!= nil {
+			return
+		}
+		h := len(rowsGet)
+		// 过滤空格，回车
+		for i := 0; i < h; i++ {
+			rowData := make([]string, colCount, colCount)
+			for j := 0; j < colCount; j++ {
+				v := rowsGet[i][j]
+				v = strings.ReplaceAll(v, "\r\n", "")
+				v = strings.ReplaceAll(v, "\n", "")
+				v = strings.TrimSpace(v)
+				rowData[j] = v
+			}
+			rows = append(rows, rowData)
+		}
+	default:
 		err = errors.New("暂不支持的文件格式")
 		return
 	}
@@ -442,8 +467,15 @@ func LoadLadderExcel(filePath, filename string, colCount, ignoreRows, ignoreCols
 		err = errors.New("数据列数与期望值不符！")
 		return
 	}
+	if len(rows)-ignoreRows != colCount-1 {
+		err = errors.New("数据行数与期望值不符！")
+		return
+	}
 	newRows := make([][]string, colCount-ignoreRows, colCount-ignoreRows)
 	for i, row := range rows {
+		if i == colCount {
+			break
+		}
 		log.Println(fmt.Sprintf("第 %d 行,值：%s", i, row))
 		if i < ignoreRows {
 			continue

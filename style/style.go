@@ -27,6 +27,7 @@ func NewExStyle(family string, size float64, horizontal, vertical string) (excel
 	excelStyle.Alignment = &excelize.Alignment{
 		Horizontal: horizontal,
 		Vertical:   vertical,
+		WrapText:   true,
 	}
 	// 设置文件格式为纯文本
 	excelStyle.NumFmt = 49
@@ -38,7 +39,7 @@ func NewExStyle(family string, size float64, horizontal, vertical string) (excel
  *  @Description: 设置文件格式为纯文本
  *  @return excelStyle
  */
-func NewExStyleStr()  (excelStyle Style) {
+func NewExStyleStr() (excelStyle Style) {
 	excelStyle.NumFmt = 49
 	return
 }

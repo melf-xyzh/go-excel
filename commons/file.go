@@ -32,7 +32,7 @@ func PathExists(path string) (bool, error) {
 
 // CreateFile
 /**
- *  @Description: 创建危机
+ *  @Description: 创建文件
  *  @param filePath
  *  @param fileName
  *  @param fileContent
@@ -51,6 +51,15 @@ func CreateFile(filePath, fileName string, fileContent []byte) (err error) {
 	}
 	// 拼接全路径
 	filePath = path.Join(filePath, fileName)
+	// 判断文件是否存在
+	ok, _ = PathExists(filePath)
+	if ok {
+		// 删除原文件
+		err = os.Remove(filePath)
+		if err!= nil {
+			return
+		}
+	}
 	// 创建临时文件
 	tmp, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
